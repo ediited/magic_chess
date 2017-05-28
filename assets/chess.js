@@ -1,11 +1,9 @@
 var singleField = 52;
-var scribble = new Scribble();   
 var magnet = new partMover(singleField,singleField);
 var piecesArray = [];
-var buchs=["a","b","c","d","e","f","g","h","i"];
-
-
-
+var buchs=["A","B","C","D","E","F","G","H","I"];
+var blackDown = 0;
+var whiteDown = 0;
 
 function setup(){
   	
@@ -15,6 +13,24 @@ function setup(){
 }
 
 
+//var Chess = require('./chess').Chess;
+var chess = new chess();
+
+function draw(){
+	frameRate(1);
+
+
+
+if (!chess.game_over()) {
+  var moves = chess.moves();
+  var move = moves[Math.floor(Math.random() * moves.length)];
+  chess.move(move);
+  console.log(chess.ascii());
+}
+
+}
+
+/*
 function draw(){
 
 	background(255);
@@ -28,7 +44,7 @@ function draw(){
 
 
 }
-
+*/
 
 function partMover(startPosX,startPosY){	
 	this.moveQueue = [0];
@@ -36,11 +52,12 @@ function partMover(startPosX,startPosY){
 	this.currentY = startPosY;
 	this.targetX  = this.currentX;
 	this.targetY   = this.currentY;
-	this.directionX = 1;
-	this.directionY = 1;
+	this.directionX = 2;
+	this.directionY = 2;
 	this.isMagnetic = false;
 	this.firstTime = true;
 	this.notHomeMove = true;
+	this.currentGrip;
 
 
 
@@ -95,7 +112,7 @@ function partMover(startPosX,startPosY){
 				
 				console.log("finished move");
 			
-			if (this.isMagnetic&&this.notHomeMove){
+			if (this.isMagnetic){
 				this.unGrip();
 				this.isMagnetic = false;
 				}
@@ -125,8 +142,9 @@ function partMover(startPosX,startPosY){
 	//activates the electromagnet, grips the piece at that position
 	this.grip = function(){
 
-	if (findPieceAt(this.currentX,this.currentY)!==null){
+	if (findPieceAt(this.currentX,this.currentY)!=null){
 		findPieceAt(this.currentX,this.currentY).gripped = true;
+		this.currentGrip=(findPieceAt(this.currentX,this.currentY));
 		this.isMagnetic = true;
 		}
 	}
@@ -136,14 +154,22 @@ function partMover(startPosX,startPosY){
 	}
 
 	this.unGrip = function(){
-		findPieceAt(this.currentX,this.currentY).gripped = false;
+		this.currentGrip.gripped = false;
+		this.currentGrip = null;
 		this.isMagnetic = false;
+
+	}
+
+	this.return = function(){
+		this.moveQueue.push(["X",9]);
+		//this.targetX = singleField;
+		//this.targetY = singleField;
 	}
 
 
 }
 
-function chessPiece (startX,startY,startImage,pieceType){
+function chessPiece (startX,startY,startImage,pieceType,startPX,startPY){
 	this.moveSheme;
 	this.image = startImage;
 	this.startPosX = startX;
@@ -151,6 +177,8 @@ function chessPiece (startX,startY,startImage,pieceType){
 	this.currentX = this.startPosX;
 	this.currentY = this.startPosY;
 	this.gripped = false;
+	this.originalPosX = startPX;
+	this.originalPosY = startPY;
 
 	this.draw = function(){
 		imageMode(CENTER,CENTER);
@@ -249,6 +277,12 @@ function posToCoord(pos){
 			break;
 		case "H": return singleField*8+singleField/2;
 			break;
+		case "X": return singleField;
+			break;
+		case "GB": return singleField*5-singleField/16+singleField/16*blackDown;
+			break;
+		case "GW": return singleField*5-singleField/16+singleField/16*blackDown;
+			break;
 		case 1: return singleField*8+singleField/2;
 			break;
 		case 2: return singleField*7+singleField/2;
@@ -265,19 +299,21 @@ function posToCoord(pos){
 			break;
 		case 8: return singleField*1+singleField/2;
 			break;
+		case 9: return singleField;
+			break;
+		case 10: return singleField*9+singleField/2;
+				//graveyard Black
+			break;
+		case 11: return singleField/2;//graveyard white
+			break;
 		}	
 	}
 
 function chessMove(fromLetter,fromNumber,toLetter,toNumber){
-	if(findPieceAt(posToCoord( fromLetter),posToCoord(fromNumber))==null){
+	if(findPieceAt(posToCoord(fromLetter),posToCoord(fromNumber))==null){
 		
 	}
 	else{
-
-	checkLegal(findPieceAt(posToCoord( fromLetter),posToCoord(fromNumber)));
-	checkCapture();
-
-
 	magnet.moveQueue[magnet.moveQueue.length] =([toLetter,toNumber]);
 	magnet.moveQueue[magnet.moveQueue.length]=([fromLetter,fromNumber]);
 
@@ -285,69 +321,61 @@ function chessMove(fromLetter,fromNumber,toLetter,toNumber){
 }
 function createPieces(){
 	//Blk Pawns
-	addPiece(new chessPiece(posToCoord("A"),posToCoord(7),loadImage("assets/Chess_pdt60.png"),"blkPw"));
-	addPiece(new chessPiece(posToCoord("B"),posToCoord(7),loadImage("assets/Chess_pdt60.png"),"blkPw"));
-	addPiece(new chessPiece(posToCoord("C"),posToCoord(7),loadImage("assets/Chess_pdt60.png"),"blkPw"));
-	addPiece(new chessPiece(posToCoord("D"),posToCoord(7),loadImage("assets/Chess_pdt60.png"),"blkPw"));
-	addPiece(new chessPiece(posToCoord("E"),posToCoord(7),loadImage("assets/Chess_pdt60.png"),"blkPw"));
-	addPiece(new chessPiece(posToCoord("F"),posToCoord(7),loadImage("assets/Chess_pdt60.png"),"blkPw"));
-	addPiece(new chessPiece(posToCoord("G"),posToCoord(7),loadImage("assets/Chess_pdt60.png"),"blkPw"));
-	addPiece(new chessPiece(posToCoord("H"),posToCoord(7),loadImage("assets/Chess_pdt60.png"),"blkPw"));	
+	addPiece(new chessPiece(posToCoord("A"),posToCoord(7),loadImage("assets/Chess_pdt60.png"),"blkPw","A",7));
+	addPiece(new chessPiece(posToCoord("B"),posToCoord(7),loadImage("assets/Chess_pdt60.png"),"blkPw","B",7));
+	addPiece(new chessPiece(posToCoord("C"),posToCoord(7),loadImage("assets/Chess_pdt60.png"),"blkPw","C",7));
+	addPiece(new chessPiece(posToCoord("D"),posToCoord(7),loadImage("assets/Chess_pdt60.png"),"blkPw","D",7));
+	addPiece(new chessPiece(posToCoord("E"),posToCoord(7),loadImage("assets/Chess_pdt60.png"),"blkPw","E",7));
+	addPiece(new chessPiece(posToCoord("F"),posToCoord(7),loadImage("assets/Chess_pdt60.png"),"blkPw","F",7));
+	addPiece(new chessPiece(posToCoord("G"),posToCoord(7),loadImage("assets/Chess_pdt60.png"),"blkPw","G",7));
+	addPiece(new chessPiece(posToCoord("H"),posToCoord(7),loadImage("assets/Chess_pdt60.png"),"blkPw","H",7));	
 	//blk king
-	addPiece(new chessPiece(posToCoord("E"),posToCoord(8),loadImage("assets/Chess_kdt60.png"),"blkKi"));
+	addPiece(new chessPiece(posToCoord("E"),posToCoord(8),loadImage("assets/Chess_kdt60.png"),"blkKi","E",8));
 	//blk queen
-	addPiece(new chessPiece(posToCoord("D"),posToCoord(8),loadImage("assets/Chess_qdt60.png"),"blkQu"));
+	addPiece(new chessPiece(posToCoord("D"),posToCoord(8),loadImage("assets/Chess_qdt60.png"),"blkQu","D",8));
 	//blk bishop 
-	addPiece(new chessPiece(posToCoord("C"),posToCoord(8),loadImage("assets/Chess_bdt60.png"),"blkBi"));
-	addPiece(new chessPiece(posToCoord("F"),posToCoord(8),loadImage("assets/Chess_bdt60.png"),"blkBi"));
+	addPiece(new chessPiece(posToCoord("C"),posToCoord(8),loadImage("assets/Chess_bdt60.png"),"blkBi","C",8));
+	addPiece(new chessPiece(posToCoord("F"),posToCoord(8),loadImage("assets/Chess_bdt60.png"),"blkBi","F",8));
 	//blk knight
-	addPiece(new chessPiece(posToCoord("B"),posToCoord(8),loadImage("assets/Chess_ndt60.png"),"blkKn"));
-	addPiece(new chessPiece(posToCoord("G"),posToCoord(8),loadImage("assets/Chess_ndt60.png"),"blkKn"));
+	addPiece(new chessPiece(posToCoord("B"),posToCoord(8),loadImage("assets/Chess_ndt60.png"),"blkKn","B",8));
+	addPiece(new chessPiece(posToCoord("G"),posToCoord(8),loadImage("assets/Chess_ndt60.png"),"blkKn","G",8));
 	//blk rook
-	addPiece(new chessPiece(posToCoord("A"),posToCoord(8),loadImage("assets/Chess_rdt60.png"),"blkRo"));
-	addPiece(new chessPiece(posToCoord("H"),posToCoord(8),loadImage("assets/Chess_rdt60.png"),"blkRo"));
+	addPiece(new chessPiece(posToCoord("A"),posToCoord(8),loadImage("assets/Chess_rdt60.png"),"blkRo","A",8));
+	addPiece(new chessPiece(posToCoord("H"),posToCoord(8),loadImage("assets/Chess_rdt60.png"),"blkRo","H",8));
 	
 	//wht Pawns 
-	addPiece(new chessPiece(posToCoord("A"),posToCoord(2),loadImage("assets/Chess_plt60.png"),"whtPw"));	
-	addPiece(new chessPiece(posToCoord("B"),posToCoord(2),loadImage("assets/Chess_plt60.png"),"whtPw"));
-	addPiece(new chessPiece(posToCoord("C"),posToCoord(2),loadImage("assets/Chess_plt60.png"),"whtPw"));
-	addPiece(new chessPiece(posToCoord("D"),posToCoord(2),loadImage("assets/Chess_plt60.png"),"whtPw"));
-	addPiece(new chessPiece(posToCoord("E"),posToCoord(2),loadImage("assets/Chess_plt60.png"),"whtPw"));
-	addPiece(new chessPiece(posToCoord("F"),posToCoord(2),loadImage("assets/Chess_plt60.png"),"whtPw"));
-	addPiece(new chessPiece(posToCoord("G"),posToCoord(2),loadImage("assets/Chess_plt60.png"),"whtPw"));
-	addPiece(new chessPiece(posToCoord("H"),posToCoord(2),loadImage("assets/Chess_plt60.png"),"whtPw"));
+	addPiece(new chessPiece(posToCoord("A"),posToCoord(2),loadImage("assets/Chess_plt60.png"),"whtPw","A",2));	
+	addPiece(new chessPiece(posToCoord("B"),posToCoord(2),loadImage("assets/Chess_plt60.png"),"whtPw","B",2));
+	addPiece(new chessPiece(posToCoord("C"),posToCoord(2),loadImage("assets/Chess_plt60.png"),"whtPw","C",2));
+	addPiece(new chessPiece(posToCoord("D"),posToCoord(2),loadImage("assets/Chess_plt60.png"),"whtPw","D",2));
+	addPiece(new chessPiece(posToCoord("E"),posToCoord(2),loadImage("assets/Chess_plt60.png"),"whtPw","E",2));
+	addPiece(new chessPiece(posToCoord("F"),posToCoord(2),loadImage("assets/Chess_plt60.png"),"whtPw","F",2));
+	addPiece(new chessPiece(posToCoord("G"),posToCoord(2),loadImage("assets/Chess_plt60.png"),"whtPw","G",2));
+	addPiece(new chessPiece(posToCoord("H"),posToCoord(2),loadImage("assets/Chess_plt60.png"),"whtPw","H",2));
 	//wht king
-	addPiece(new chessPiece(posToCoord("E"),posToCoord(1),loadImage("assets/Chess_klt60.png"),"whtKi"));
+	addPiece(new chessPiece(posToCoord("E"),posToCoord(1),loadImage("assets/Chess_klt60.png"),"whtKi","E",1));
 	//wht queen
-	addPiece(new chessPiece(posToCoord("D"),posToCoord(1),loadImage("assets/Chess_qlt60.png"),"whtQu"));
+	addPiece(new chessPiece(posToCoord("D"),posToCoord(1),loadImage("assets/Chess_qlt60.png"),"whtQu","D",1));
 	//wht bishop 
-	addPiece(new chessPiece(posToCoord("C"),posToCoord(1),loadImage("assets/Chess_blt60.png"),"whtBi"));
-	addPiece(new chessPiece(posToCoord("F"),posToCoord(1),loadImage("assets/Chess_blt60.png"),"whtBi"));
+	addPiece(new chessPiece(posToCoord("C"),posToCoord(1),loadImage("assets/Chess_blt60.png"),"whtBi","C",1));
+	addPiece(new chessPiece(posToCoord("F"),posToCoord(1),loadImage("assets/Chess_blt60.png"),"whtBi","F",1));
 	//wht knight
-	addPiece(new chessPiece(posToCoord("B"),posToCoord(1),loadImage("assets/Chess_nlt60.png"),"whtKn"));
-	addPiece(new chessPiece(posToCoord("G"),posToCoord(1),loadImage("assets/Chess_nlt60.png"),"whtKn"));
+	addPiece(new chessPiece(posToCoord("B"),posToCoord(1),loadImage("assets/Chess_nlt60.png"),"whtKn","B",1));
+	addPiece(new chessPiece(posToCoord("G"),posToCoord(1),loadImage("assets/Chess_nlt60.png"),"whtKn","G",1));
 	//wht rook
-	addPiece(new chessPiece(posToCoord("A"),posToCoord(1),loadImage("assets/Chess_rlt60.png"),"whtRo"));
-	addPiece(new chessPiece(posToCoord("H"),posToCoord(1),loadImage("assets/Chess_rlt60.png"),"whtRo"));
+	addPiece(new chessPiece(posToCoord("A"),posToCoord(1),loadImage("assets/Chess_rlt60.png"),"whtRo","A",1));
+	addPiece(new chessPiece(posToCoord("H"),posToCoord(1),loadImage("assets/Chess_rlt60.png"),"whtRo","H",1));
 }
 
 function checkCheck(){
+	//was ein dummer funktionsname
 
 }
 
 function checkLegal(pieceToCheck,fromLe,fromNu,toLe,toNu){
-switch(pieceToCheck.pieceType){
-case "blkPw":
-		
+	//hehehehehhe
+	//das macht chess.js für mich 
 
-
-		break;
-
-
-
-
-
-}
 
 
 
@@ -355,5 +383,17 @@ case "blkPw":
 }
 
 function checkCapture(){
+	//muss noch gemacht werden :( 
 
+}
+
+function openingExample(){
+	
+	chessMove("E",7,"E",6);
+	chessMove("E",2,"E",4);
+	chessMove("D",7,"D",5);
+	chessMove("D",2,"D",4);
+
+
+	
 }
